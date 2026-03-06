@@ -1,0 +1,46 @@
+<Window x:Class="ConnectorManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:ConnectorManager.Views"
+        Title="CMB Connector Manager v1.0" Height="800" Width="1100"
+        WindowStartupLocation="CenterScreen"
+        Icon="{x:Null}">
+    <Window.Resources>
+        <Style x:Key="TabHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="4,2"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <TabControl SelectedIndex="{Binding SelectedTabIndex}" Padding="0">
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="🔨 Build Chain" Style="{StaticResource TabHeaderStyle}"/>
+                </TabItem.Header>
+                <views:BuildChainView DataContext="{Binding BuildChain}"/>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="🌐 API Manager" Style="{StaticResource TabHeaderStyle}"/>
+                </TabItem.Header>
+                <views:ApiManagerView DataContext="{Binding ApiManager}"/>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="🚀 Deploy Connector" Style="{StaticResource TabHeaderStyle}"/>
+                </TabItem.Header>
+                <views:DeployConnectorView DataContext="{Binding DeployConnector}"/>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="⚙ Settings" Style="{StaticResource TabHeaderStyle}"/>
+                </TabItem.Header>
+                <views:SettingsView DataContext="{Binding Settings}"/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

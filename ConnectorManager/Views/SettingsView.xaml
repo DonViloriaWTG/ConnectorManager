@@ -1,0 +1,47 @@
+<UserControl x:Class="ConnectorManager.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:ConnectorManager.Models">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="16">
+        <StackPanel MaxWidth="700">
+            <TextBlock Text="Settings" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16"/>
+
+            <!-- Auto-Detect -->
+            <GroupBox Header="Repository Detection" Margin="0,0,0,16" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="CMB.DevTools (used as root for auto-detect):" Margin="0,0,0,2"/>
+                    <TextBox Text="{Binding DevToolsRepoPath, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="6,4" Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="🔍 Auto-Detect" Command="{Binding AutoDetectCommand}"
+                                Padding="12,4"/>
+                        <TextBlock Text="  Detects sibling repos from DevTools path"
+                                   Foreground="#888" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Authentication -->
+            <GroupBox Header="Authentication" Margin="0,0,0,16" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Authorization header value:" Margin="0,0,0,2"/>
+                    <TextBlock Text="e.g. Basic dXNlcjpwYXNz  or  Bearer eyJhbGci..."
+                               Foreground="#888" FontSize="11" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding AuthorizationHeader, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="6,4" Margin="0,0,0,12"
+                             TextWrapping="Wrap" AcceptsReturn="False" MaxHeight="60"
+                             VerticalScrollBarVisibility="Auto"
+                             FontFamily="Cascadia Mono,Consolas"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Save -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Content="💾 Save Settings" Command="{Binding SaveCommand}"
+                        Padding="16,8" Background="#2D7D46" Foreground="White" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Margin="16,0,0,0"
+                           FontWeight="SemiBold"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
