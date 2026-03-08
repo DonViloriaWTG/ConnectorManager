@@ -9,7 +9,6 @@ public sealed class WorkspaceSettings
     public string FrameworkRepoPath { get; set; } = string.Empty;
     public string CoreRepoPath { get; set; } = string.Empty;
     public string CarrierConnectorRepoPath { get; set; } = string.Empty;
-    public string DevToolsRepoPath { get; set; } = string.Empty;
     public string ApiBaseUrl { get; set; } = "http://localhost:5000";
     public AuthMode AuthenticationMode { get; set; } = AuthMode.ManualBearer;
 
@@ -49,7 +48,7 @@ public sealed class WorkspaceSettings
             catch { /* access denied */ }
         }
 
-        string[] repoNames = ["CMB.Common", "CMB.Framework", "CMB.Core", "CMB.CarrierConnector", "CMB.DevTools"];
+        string[] repoNames = ["CMB.Common", "CMB.Framework", "CMB.Core", "CMB.CarrierConnector"];
 
         foreach (var dir in candidates)
         {
@@ -71,8 +70,6 @@ public sealed class WorkspaceSettings
                         settings.CoreRepoPath = candidate; break;
                     case "CMB.CarrierConnector" when string.IsNullOrEmpty(settings.CarrierConnectorRepoPath):
                         settings.CarrierConnectorRepoPath = candidate; break;
-                    case "CMB.DevTools" when string.IsNullOrEmpty(settings.DevToolsRepoPath):
-                        settings.DevToolsRepoPath = candidate; break;
                 }
             }
         }

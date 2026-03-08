@@ -8,16 +8,11 @@
 
             <!-- Auto-Detect -->
             <GroupBox Header="Repository Detection" Margin="0,0,0,16" Padding="12">
-                <StackPanel>
-                    <TextBlock Text="CMB.DevTools (used as root for auto-detect):" Margin="0,0,0,2"/>
-                    <TextBox Text="{Binding DevToolsRepoPath, UpdateSourceTrigger=PropertyChanged}"
-                             Padding="6,4" Margin="0,0,0,8"/>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="🔍 Auto-Detect" Command="{Binding AutoDetectCommand}"
-                                Padding="12,4"/>
-                        <TextBlock Text="  Detects sibling repos from DevTools path"
-                                   Foreground="#888" VerticalAlignment="Center"/>
-                    </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="📂 Auto-Detect Repos" Command="{Binding AutoDetectCommand}"
+                            Padding="12,4"/>
+                    <TextBlock Text="  Browse to workspace root to detect CMB repos"
+                               Foreground="#888" VerticalAlignment="Center"/>
                 </StackPanel>
             </GroupBox>
 

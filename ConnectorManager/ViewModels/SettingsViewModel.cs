@@ -25,9 +25,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     private string _carrierConnectorRepoPath = string.Empty;
 
     [ObservableProperty]
-    private string _devToolsRepoPath = string.Empty;
-
-    [ObservableProperty]
     private string _apiBaseUrl = "http://localhost:5000";
 
     [ObservableProperty]
@@ -45,7 +42,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         FrameworkRepoPath = FrameworkRepoPath,
         CoreRepoPath = CoreRepoPath,
         CarrierConnectorRepoPath = CarrierConnectorRepoPath,
-        DevToolsRepoPath = DevToolsRepoPath,
         ApiBaseUrl = ApiBaseUrl,
         AuthenticationMode = AuthenticationMode,
         AuthorizationHeader = AuthorizationHeader
@@ -57,7 +53,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         FrameworkRepoPath = settings.FrameworkRepoPath;
         CoreRepoPath = settings.CoreRepoPath;
         CarrierConnectorRepoPath = settings.CarrierConnectorRepoPath;
-        DevToolsRepoPath = settings.DevToolsRepoPath;
         ApiBaseUrl = settings.ApiBaseUrl;
         AuthenticationMode = settings.AuthenticationMode;
         AuthorizationHeader = settings.AuthorizationHeader;
@@ -78,14 +73,22 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void AutoDetect()
     {
-        if (string.IsNullOrEmpty(DevToolsRepoPath))
+        var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            StatusText = "⚠ Set the DevTools repo path first, then auto-detect.";
-            return;
-        }
+            Title = "Select workspace root (parent of CMB repos)"
+        };
 
-        var detected = WorkspaceSettings.AutoDetect(DevToolsRepoPath);
-        LoadFromSettings(detected);
+        if (dialog.ShowDialog() != true)
+            return;
+
+        var detected = WorkspaceSettings.AutoDetect(dialog.FolderName);
+
+        // Only update repo paths — preserve auth and API settings
+        CommonRepoPath = detected.CommonRepoPath;
+        FrameworkRepoPath = detected.FrameworkRepoPath;
+        CoreRepoPath = detected.CoreRepoPath;
+        CarrierConnectorRepoPath = detected.CarrierConnectorRepoPath;
+
         StatusText = detected.IsValid
             ? "✔ All repos detected successfully."
             : "⚠ Some repos not found. Please set paths manually.";
