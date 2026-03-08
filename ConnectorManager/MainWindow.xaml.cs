@@ -14,10 +14,16 @@ public partial class MainWindow : Window
         DataContext = _viewModel;
         _viewModel.Initialize();
 
-        // Set title with version from assembly (e.g. "1.0.3+75fd903")
+        // Set title with version from assembly (e.g. "1.0.42+fdb56ce")
         var version = Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion ?? "unknown";
+
+        // Trim commit hash to 7 characters
+        var plusIndex = version.IndexOf('+');
+        if (plusIndex >= 0 && version.Length > plusIndex + 8)
+            version = version[..(plusIndex + 8)];
+
         Title = $"CMB Connector Manager v{version}";
 
         Closing += (_, _) => _viewModel.Dispose();
