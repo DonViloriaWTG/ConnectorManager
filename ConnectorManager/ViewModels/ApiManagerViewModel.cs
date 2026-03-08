@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ConnectorManager.Models;
 using ConnectorManager.Services;
+using Microsoft.Win32;
 
 namespace ConnectorManager.ViewModels;
 
@@ -12,6 +13,7 @@ namespace ConnectorManager.ViewModels;
 public sealed partial class ApiManagerViewModel : ObservableObject, IDisposable
 {
     private readonly ApiProcessService _apiService = new();
+    private readonly PayloadCaptureService _payloadCapture = new();
 
     [ObservableProperty]
     private ApiStatus _status = ApiStatus.Stopped;
@@ -22,10 +24,44 @@ public sealed partial class ApiManagerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _apiUrl = "(not started)";
 
+    /// <summary>
+    /// The CMB.Core repository path used to launch the API.
+    /// Editable so the user can override it directly on this tab.
+    /// </summary>
+    [ObservableProperty]
+    private string _coreRepoPath = string.Empty;
+
+    /// <summary>
+    /// Raised when the user changes the Core repo path on this tab,
+    /// so the main VM can sync it back to Settings.
+    /// </summary>
+    public event Action<string>? CoreRepoPathChanged;
+
+    partial void OnCoreRepoPathChanged(string value)
+    {
+        if (_settings is not null)
+        {
+            _settings.CoreRepoPath = value;
+        }
+
+        CoreRepoPathChanged?.Invoke(value);
+    }
+
     [ObservableProperty]
     private string _outputLogText = string.Empty;
 
     public ObservableCollection<string> OutputLog { get; } = [];
+
+    /// <summary>
+    /// Carrier payloads captured from the API's structured log files.
+    /// </summary>
+    public ObservableCollection<CapturedPayload> CapturedPayloads { get; } = [];
+
+    /// <summary>
+    /// The currently selected payload in the list — its content is displayed in the detail view.
+    /// </summary>
+    [ObservableProperty]
+    private CapturedPayload? _selectedPayload;
 
     private WorkspaceSettings? _settings;
     private TaskCompletionSource<int?>? _readyTcs;
@@ -61,11 +97,37 @@ public sealed partial class ApiManagerViewModel : ObservableObject, IDisposable
                 // Return the actual server PID (child of dotnet run), not the CLI wrapper
                 _readyTcs?.TrySetResult(_apiService.ActualServerProcessId ?? _apiService.ProcessId);
             });
+
+        _payloadCapture.PayloadCaptured += payload =>
+            App.Current.Dispatcher.BeginInvoke(() =>
+            {
+                CapturedPayloads.Add(payload);
+                SelectedPayload = payload;
+            });
+
+        _payloadCapture.DiagnosticMessage += message =>
+            App.Current.Dispatcher.BeginInvoke(() => AppendOutput(message));
+    }
+
+    [RelayCommand]
+    private void BrowseCoreRepo()
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Select CMB.Core repository folder",
+            InitialDirectory = Directory.Exists(CoreRepoPath) ? CoreRepoPath : string.Empty
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            CoreRepoPath = dialog.FolderName;
+        }
     }
 
     public void Initialize(WorkspaceSettings settings)
     {
         _settings = settings;
+        CoreRepoPath = settings.CoreRepoPath;
     }
 
     public bool IsRunning => _apiService.IsRunning;
@@ -84,6 +146,7 @@ public sealed partial class ApiManagerViewModel : ObservableObject, IDisposable
 
         OutputLog.Clear();
         OutputLogText = string.Empty;
+        StartPayloadCapture();
         await _apiService.StartAsync(_settings.CoreRepoPath).ConfigureAwait(true);
     }
 
@@ -108,6 +171,7 @@ public sealed partial class ApiManagerViewModel : ObservableObject, IDisposable
 
         OutputLog.Clear();
         OutputLogText = string.Empty;
+        StartPayloadCapture();
         await _apiService.StartWithDebugAsync(_settings.CoreRepoPath, debugPackagePath, debugPackageName).ConfigureAwait(true);
     }
 
@@ -155,6 +219,32 @@ public sealed partial class ApiManagerViewModel : ObservableObject, IDisposable
         }
     }
 
+    [RelayCommand]
+    private void CopyPayload()
+    {
+        if (SelectedPayload?.Content is not null)
+        {
+            System.Windows.Clipboard.SetText(SelectedPayload.Content);
+        }
+    }
+
+    [RelayCommand]
+    private void ClearPayloads()
+    {
+        CapturedPayloads.Clear();
+        SelectedPayload = null;
+    }
+
+    private void StartPayloadCapture()
+    {
+        if (_settings is not null &&
+            !string.IsNullOrEmpty(_settings.CoreRepoPath) &&
+            Directory.Exists(_settings.CoreRepoPath))
+        {
+            _payloadCapture.Start(_settings.CoreRepoPath);
+        }
+    }
+
     private void AppendOutput(string message)
     {
         OutputLog.Add(message);
@@ -165,6 +255,7 @@ public sealed partial class ApiManagerViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _payloadCapture.Dispose();
         _apiService.Dispose();
     }
 }

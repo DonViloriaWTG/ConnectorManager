@@ -20,18 +20,31 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         Settings.SettingsSaved += OnSettingsSaved;
 
-        // When repo paths change in the Build Chain tab, sync back to Settings
+        // When repo paths change in the Build Chain tab, sync back to Settings,
+        // re-initialize the API Manager so it uses the updated Core path,
+        // and persist so the app remembers them on next launch.
         BuildChain.RepoPathsChanged += (common, framework, core) =>
         {
             Settings.CommonRepoPath = common;
             Settings.FrameworkRepoPath = framework;
             Settings.CoreRepoPath = core;
+            Settings.SaveQuietly();
+
+            ApiManager.Initialize(Settings.ToSettings());
         };
 
         // When the CarrierConnector repo path changes in the Deploy tab, sync back to Settings
         DeployConnector.CarrierConnectorRepoPathChanged += path =>
         {
             Settings.CarrierConnectorRepoPath = path;
+            Settings.SaveQuietly();
+        };
+
+        // When the Core repo path changes in the API Manager tab, sync back to Settings
+        ApiManager.CoreRepoPathChanged += path =>
+        {
+            Settings.CoreRepoPath = path;
+            Settings.SaveQuietly();
         };
 
         // When the Deploy tab requests to debug a connector, restart the API with debug args
@@ -62,6 +75,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         Settings.Load();
         var currentSettings = Settings.ToSettings();
+
+        // Persist auto-detected settings so subsequent launches remember them
+        // instead of re-running auto-detection (which may pick up wrong paths).
+        Settings.SaveQuietly();
+
         PropagateSettings(currentSettings);
     }
 

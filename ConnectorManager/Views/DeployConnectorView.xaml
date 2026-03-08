@@ -40,9 +40,11 @@
                        VerticalAlignment="Center" Foreground="#888" Margin="8,0"/>
         </StackPanel>
 
-        <!-- Search + Results -->
+        <!-- Search + Results + Special Details -->
         <Grid Grid.Row="2" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="16"/>
                 <ColumnDefinition Width="*"/>
@@ -105,6 +107,26 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
+
+            <!-- Special Details Override -->
+            <GroupBox Grid.Column="4">
+                <GroupBox.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Special Details" VerticalAlignment="Center"
+                                   FontWeight="SemiBold"/>
+                        <Button Content="↩ Reset" Command="{Binding ResetSpecialDetailsCommand}"
+                                Padding="8,2" Margin="12,0,0,0" FontSize="11"
+                                ToolTip="Reset to original values from source"/>
+                    </StackPanel>
+                </GroupBox.Header>
+                <TextBox Text="{Binding SpecialDetailsContent, UpdateSourceTrigger=PropertyChanged}"
+                         FontFamily="Cascadia Mono,Consolas,Courier New"
+                         FontSize="11" AcceptsReturn="True" AcceptsTab="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         BorderThickness="0"/>
+            </GroupBox>
         </Grid>
 
         <!-- Action Buttons -->

@@ -98,6 +98,15 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Persists current settings to disk without updating the status text.
+    /// Used for automatic background saves (e.g. when paths change in other tabs).
+    /// </summary>
+    public void SaveQuietly()
+    {
+        _persistence.Save(ToSettings());
+    }
+
+    /// <summary>
     /// Raised when settings are saved, allowing other VMs to refresh.
     /// </summary>
     public event Action<WorkspaceSettings>? SettingsSaved;

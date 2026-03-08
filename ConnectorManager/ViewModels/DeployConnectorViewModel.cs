@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ConnectorManager.Models;
@@ -42,6 +43,23 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
     private string _outputLogText = string.Empty;
 
     /// <summary>
+    /// The content of the selected connector's special-details.json.
+    /// Editable — overrides are applied to the publish output before packaging.
+    /// </summary>
+    [ObservableProperty]
+    private string _specialDetailsContent = string.Empty;
+
+    /// <summary>
+    /// The original content loaded from disk, used to detect if the user made changes.
+    /// </summary>
+    private string _specialDetailsOriginal = string.Empty;
+
+    /// <summary>
+    /// Path to the special-details.json source file for the selected connector.
+    /// </summary>
+    private string? _specialDetailsSourcePath;
+
+    /// <summary>
     /// Path to the CMB.CarrierConnector repository, editable inline.
     /// </summary>
     [ObservableProperty]
@@ -81,6 +99,11 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
         _settings = settings;
         CarrierConnectorRepoPath = settings.CarrierConnectorRepoPath;
         AuthorizationHeader = settings.AuthorizationHeader;
+    }
+
+    partial void OnSelectedConnectorChanged(ConnectorInfo? value)
+    {
+        LoadSpecialDetails(value);
     }
 
     partial void OnCarrierConnectorRepoPathChanged(string value)
@@ -216,6 +239,9 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
                 return;
             }
 
+            // Apply special-details overrides to the debug publish output
+            ApplySpecialDetailsOverrides(publishDir);
+
             AppendOutput($"  ✔ Debug build complete. Restarting API with debug args...");
             AppendOutput($"  Package path: {connector.SolutionDirectory}");
             AppendOutput($"  Package name: {connectorName}");
@@ -327,6 +353,7 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
 
             if (!uploadAfterBuild)
             {
+                ApplySpecialDetailsOverrides(buildResult.PublishDirectory!);
                 StatusText = "✔ Build succeeded";
                 return;
             }
@@ -356,6 +383,7 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
 
             // Package
             StatusText = "Creating package...";
+            ApplySpecialDetailsOverrides(buildResult.PublishDirectory!);
             var zipPath = _packageService.CreatePackage(
                 buildResult.PublishDirectory!,
                 SelectedConnector.Name,
@@ -414,5 +442,100 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
         OutputLogText = string.IsNullOrEmpty(OutputLogText)
             ? message
             : OutputLogText + Environment.NewLine + message;
+    }
+
+    /// <summary>
+    /// Loads the special-details.json content for the given connector.
+    /// </summary>
+    private void LoadSpecialDetails(ConnectorInfo? connector)
+    {
+        if (connector is null)
+        {
+            SpecialDetailsContent = string.Empty;
+            _specialDetailsOriginal = string.Empty;
+            _specialDetailsSourcePath = null;
+            return;
+        }
+
+        // special-details.json sits next to the .csproj
+        var projectDir = Path.GetDirectoryName(connector.ProjectPath);
+        if (projectDir is null)
+        {
+            SpecialDetailsContent = string.Empty;
+            _specialDetailsOriginal = string.Empty;
+            _specialDetailsSourcePath = null;
+            return;
+        }
+
+        var path = Path.Combine(projectDir, "special-details.json");
+        _specialDetailsSourcePath = path;
+
+        if (File.Exists(path))
+        {
+            try
+            {
+                var raw = File.ReadAllText(path);
+                // Pretty-print for readability
+                var doc = JsonDocument.Parse(raw);
+                var formatted = JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+                SpecialDetailsContent = formatted;
+                _specialDetailsOriginal = formatted;
+            }
+            catch (Exception ex)
+            {
+                SpecialDetailsContent = $"// Error reading file: {ex.Message}";
+                _specialDetailsOriginal = string.Empty;
+            }
+        }
+        else
+        {
+            SpecialDetailsContent = "// No special-details.json found for this connector";
+            _specialDetailsOriginal = string.Empty;
+            _specialDetailsSourcePath = null;
+        }
+    }
+
+    /// <summary>
+    /// If the user modified special-details.json content, writes the overrides
+    /// into the publish directory so the packaged/debug connector uses them.
+    /// </summary>
+    private void ApplySpecialDetailsOverrides(string publishDirectory)
+    {
+        if (string.IsNullOrEmpty(SpecialDetailsContent) ||
+            SpecialDetailsContent == _specialDetailsOriginal ||
+            SpecialDetailsContent.StartsWith("//"))
+        {
+            return;
+        }
+
+        // Validate it's valid JSON before writing
+        try
+        {
+            JsonDocument.Parse(SpecialDetailsContent);
+        }
+        catch (JsonException ex)
+        {
+            AppendOutput($"  ⚠ Special details JSON is invalid, skipping override: {ex.Message}");
+            return;
+        }
+
+        var targetPath = Path.Combine(publishDirectory, "special-details.json");
+        if (!File.Exists(targetPath))
+        {
+            AppendOutput("  ⚠ No special-details.json in publish output — nothing to override.");
+            return;
+        }
+
+        File.WriteAllText(targetPath, SpecialDetailsContent);
+        AppendOutput("  ✔ Applied special-details.json overrides to publish output.");
+    }
+
+    [RelayCommand]
+    private void ResetSpecialDetails()
+    {
+        if (!string.IsNullOrEmpty(_specialDetailsOriginal))
+        {
+            SpecialDetailsContent = _specialDetailsOriginal;
+        }
     }
 }

@@ -6,12 +6,27 @@
     <Nullable>enable</Nullable>
     <RootNamespace>ConnectorManager</RootNamespace>
     <AssemblyName>ConnectorManager</AssemblyName>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
     <Product>CMB Connector Manager</Product>
     <Description>Build, deploy, and debug CMB carrier connectors locally.</Description>
   </PropertyGroup>
+
+  <!-- Compute version from git: 1.0.{commit count}+{short hash} -->
+  <Target Name="SetGitVersion" BeforeTargets="GetAssemblyVersion;GenerateNuspec;Build">
+    <Exec Command="git rev-list --count HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitCount" />
+    </Exec>
+    <Exec Command="git rev-parse --short HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitShortHash" />
+    </Exec>
+    <PropertyGroup>
+      <GitCommitCount Condition="'$(GitCommitCount)' == ''">0</GitCommitCount>
+      <GitShortHash Condition="'$(GitShortHash)' == ''">unknown</GitShortHash>
+      <Version>1.0.$(GitCommitCount)</Version>
+      <AssemblyVersion>1.0.$(GitCommitCount).0</AssemblyVersion>
+      <FileVersion>1.0.$(GitCommitCount).0</FileVersion>
+      <InformationalVersion>1.0.$(GitCommitCount)+$(GitShortHash)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
