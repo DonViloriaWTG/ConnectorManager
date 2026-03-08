@@ -24,10 +24,10 @@
     <PropertyGroup>
       <GitCommitCount Condition="'$(GitCommitCount)' == ''">0</GitCommitCount>
       <GitShortHash Condition="'$(GitShortHash)' == ''">unknown</GitShortHash>
-      <Version>1.0.$(GitCommitCount)</Version>
-      <AssemblyVersion>1.0.$(GitCommitCount).0</AssemblyVersion>
-      <FileVersion>1.0.$(GitCommitCount).0</FileVersion>
-      <InformationalVersion>1.0.$(GitCommitCount)+$(GitShortHash)</InformationalVersion>
+      <Version>2.0.$(GitCommitCount)</Version>
+      <AssemblyVersion>2.0.$(GitCommitCount).0</AssemblyVersion>
+      <FileVersion>2.0.$(GitCommitCount).0</FileVersion>
+      <InformationalVersion>2.0.$(GitCommitCount)+$(GitShortHash)</InformationalVersion>
       <SourceRevisionId />
     </PropertyGroup>
   </Target>
@@ -35,5 +35,9 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Flags\*.png" />
   </ItemGroup>
 </Project>

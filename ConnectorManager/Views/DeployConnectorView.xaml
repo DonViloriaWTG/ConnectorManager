@@ -3,6 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:models="clr-namespace:ConnectorManager.Models"
              xmlns:converters="clr-namespace:ConnectorManager.Converters">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+        <converters:StringToBrushConverter x:Key="StringToBrush"/>
+        <converters:NullToCollapsedConverter x:Key="NullToCollapsed"/>
+    </UserControl.Resources>
+
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -50,15 +57,81 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Search -->
+            <!-- Search / Region Navigation -->
             <StackPanel Grid.Column="0">
                 <TextBlock Text="Search connectors:" Margin="0,0,0,4"/>
                 <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8,6" FontSize="14"/>
+
+                <!-- Back button (visible when a region is selected) -->
+                <Button Content="← Back to Regions" Command="{Binding BackToRegionsCommand}"
+                        Margin="0,6,0,0" Padding="8,4" HorizontalAlignment="Left"
+                        Visibility="{Binding SelectedRegion, Converter={StaticResource NullToCollapsed}}"/>
+
+                <!-- Region tiles in 4-column grid (visible when connector list is NOT shown) -->
+                <ItemsControl ItemsSource="{Binding Regions}" Margin="0,6,0,0"
+                              Visibility="{Binding ShowConnectorList, Converter={StaticResource InvBoolToVis}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="4"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding DataContext.SelectRegionCommand,
+                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    Margin="3" Padding="0" Cursor="Hand"
+                                    BorderThickness="1" BorderBrush="#CCC"
+                                    Background="White">
+                                <StackPanel HorizontalAlignment="Center" Margin="6,8">
+                                    <!-- Flag image (for country regions) -->
+                                    <Image Source="{Binding FlagPath}" Width="48" Height="32"
+                                           RenderOptions.BitmapScalingMode="HighQuality"
+                                           HorizontalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGlobe}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <!-- Globe icon (for Global / International) -->
+                                    <TextBlock Text="🌐" FontSize="26" HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGlobe}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <!-- Region name -->
+                                    <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <!-- Connector count -->
+                                    <TextBlock Text="{Binding ConnectorCount, StringFormat='{}{0}'}"
+                                               Foreground="#888" FontSize="10"
+                                               HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Connector list (visible when searching or region selected) -->
                 <ListBox ItemsSource="{Binding SearchResults}"
                          SelectedItem="{Binding SelectedConnector}"
-                         MaxHeight="250" Margin="0,4,0,0"
-                         DisplayMemberPath="DisplayName"/>
+                         MaxHeight="280" Margin="0,4,0,0"
+                         DisplayMemberPath="DisplayName"
+                         Visibility="{Binding ShowConnectorList, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
 
             <!-- Selected Connector Details -->

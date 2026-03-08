@@ -39,6 +39,20 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
     [ObservableProperty]
     private int _connectorCount;
 
+    /// <summary>
+    /// The currently selected region. When null, the region list is shown.
+    /// When set, only connectors from this region are shown.
+    /// </summary>
+    [ObservableProperty]
+    private RegionInfo? _selectedRegion;
+
+    /// <summary>
+    /// True when a region is selected and the connector list should be shown.
+    /// Also true when the search box has text (searching across all regions).
+    /// </summary>
+    [ObservableProperty]
+    private bool _showConnectorList;
+
     [ObservableProperty]
     private string _outputLogText = string.Empty;
 
@@ -74,6 +88,7 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
     private string _authorizationHeader = string.Empty;
 
     public ObservableCollection<ConnectorInfo> SearchResults { get; } = [];
+    public ObservableCollection<RegionInfo> Regions { get; } = [];
     public ObservableCollection<string> OutputLog { get; } = [];
 
     /// <summary>
@@ -158,8 +173,7 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
             var connectors = await _scanService.ScanAsync(CarrierConnectorRepoPath).ConfigureAwait(true);
             ConnectorCount = connectors.Count;
             AppendOutput($"✔ Found {connectors.Count} connectors.");
-            StatusText = $"{connectors.Count} connectors found";
-            UpdateSearchResults();
+            StatusText = $"{connectors.Count} connectors found";            RebuildRegionList();            UpdateSearchResults();
         }
         catch (Exception ex)
         {
@@ -175,12 +189,66 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
     partial void OnSearchTextChanged(string value)
     {
         UpdateSearchResults();
+        ShowConnectorList = SelectedRegion is not null || !string.IsNullOrEmpty(value);
+    }
+
+    partial void OnSelectedRegionChanged(RegionInfo? value)
+    {
+        SearchText = string.Empty;
+        ShowConnectorList = value is not null;
+        UpdateSearchResults();
+    }
+
+    [RelayCommand]
+    private void SelectRegion(RegionInfo region)
+    {
+        SelectedRegion = region;
+    }
+
+    [RelayCommand]
+    private void BackToRegions()
+    {
+        SelectedRegion = null;
+        SearchText = string.Empty;
+    }
+
+    private void RebuildRegionList()
+    {
+        Regions.Clear();
+        var groups = _scanService.Connectors
+            .GroupBy(c => c.Region)
+            .OrderBy(g => g.Key);
+
+        foreach (var group in groups)
+        {
+            Regions.Add(new RegionInfo
+            {
+                Name = group.Key,
+                Code = RegionInfo.GetCode(group.Key),
+                FlagPath = RegionInfo.GetFlagPath(group.Key),
+                IsGlobe = RegionInfo.IsGlobeRegion(group.Key),
+                ConnectorCount = group.Count()
+            });
+        }
     }
 
     private void UpdateSearchResults()
     {
         SearchResults.Clear();
-        var results = _scanService.Search(SearchText);
+        IReadOnlyList<ConnectorInfo> results;
+
+        if (SelectedRegion is not null)
+        {
+            // Filter by region, then apply text search within that region
+            results = _scanService.Search(SearchText)
+                .Where(c => c.Region.Equals(SelectedRegion.Name, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        else
+        {
+            results = _scanService.Search(SearchText);
+        }
+
         foreach (var connector in results)
         {
             SearchResults.Add(connector);
