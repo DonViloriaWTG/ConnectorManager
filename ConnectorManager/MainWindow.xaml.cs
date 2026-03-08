@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Windows;
 using ConnectorManager.ViewModels;
 
@@ -12,6 +13,12 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = _viewModel;
         _viewModel.Initialize();
+
+        // Set title with version from assembly (e.g. "1.0.3+75fd903")
+        var version = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion ?? "unknown";
+        Title = $"CMB Connector Manager v{version}";
 
         Closing += (_, _) => _viewModel.Dispose();
     }
