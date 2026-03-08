@@ -8,6 +8,9 @@
     <AssemblyName>ConnectorManager</AssemblyName>
     <Product>CMB Connector Manager</Product>
     <Description>Build, deploy, and debug CMB carrier connectors locally.</Description>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
   <!-- Compute version from git: 1.0.{commit count}+{short hash} -->
