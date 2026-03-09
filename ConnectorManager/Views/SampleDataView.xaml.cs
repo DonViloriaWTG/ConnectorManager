@@ -3,15 +3,15 @@ using ConnectorManager.ViewModels;
 
 namespace ConnectorManager.Views;
 
-public partial class SettingsView : UserControl
+public partial class SampleDataView : UserControl
 {
-    public SettingsView()
+    public SampleDataView()
     {
         InitializeComponent();
         Loaded += (_, _) =>
         {
             // Pre-fill the PasswordBox from the ViewModel (PasswordBox can't bind)
-            if (DataContext is SettingsViewModel vm && !string.IsNullOrEmpty(vm.ElasticPassword))
+            if (DataContext is SampleDataViewModel vm && !string.IsNullOrEmpty(vm.ElasticPassword))
             {
                 ElasticPasswordBox.Password = vm.ElasticPassword;
             }
@@ -23,7 +23,7 @@ public partial class SettingsView : UserControl
     /// </summary>
     private void ElasticPasswordBox_PasswordChanged(object sender, System.Windows.RoutedEventArgs e)
     {
-        if (DataContext is SettingsViewModel vm && sender is PasswordBox pb)
+        if (DataContext is SampleDataViewModel vm && sender is PasswordBox pb)
         {
             vm.ElasticPassword = pb.Password;
         }

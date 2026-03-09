@@ -11,6 +11,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public BuildChainViewModel BuildChain { get; } = new();
     public ApiManagerViewModel ApiManager { get; } = new();
     public DeployConnectorViewModel DeployConnector { get; } = new();
+    public SampleDataViewModel SampleData { get; } = new();
     public SettingsViewModel Settings { get; } = new();
 
     [ObservableProperty]
@@ -45,6 +46,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             Settings.CoreRepoPath = path;
             Settings.SaveQuietly();
+        };
+
+        // When connectors are scanned on the Deploy tab, propagate to the Sample Data tab
+        DeployConnector.ConnectorsScanned += connectors =>
+        {
+            SampleData.UpdateConnectors(connectors);
         };
 
         // When the Deploy tab requests to debug a connector, restart the API with debug args
@@ -93,10 +100,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         BuildChain.Initialize(settings);
         ApiManager.Initialize(settings);
         DeployConnector.Initialize(settings);
+        SampleData.ApplySettings(settings);
     }
 
     public void Dispose()
     {
         ApiManager.Dispose();
+        SampleData.Dispose();
     }
 }

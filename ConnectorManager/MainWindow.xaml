@@ -37,6 +37,13 @@
 
             <TabItem>
                 <TabItem.Header>
+                    <TextBlock Text="🔎 Sample Data" Style="{StaticResource TabHeaderStyle}"/>
+                </TabItem.Header>
+                <views:SampleDataView DataContext="{Binding SampleData}"/>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
                     <TextBlock Text="⚙ Settings" Style="{StaticResource TabHeaderStyle}"/>
                 </TabItem.Header>
                 <views:SettingsView DataContext="{Binding Settings}"/>

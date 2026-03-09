@@ -33,6 +33,17 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _authorizationHeader = string.Empty;
 
+    // ── Elastic GlobalSearch credentials ────────────────────────────
+
+    [ObservableProperty]
+    private string _elasticUserId = string.Empty;
+
+    [ObservableProperty]
+    private string _elasticPassword = string.Empty;
+
+    [ObservableProperty]
+    private string _elasticRegion = "APAC";
+
     [ObservableProperty]
     private string _statusText = string.Empty;
 
@@ -44,7 +55,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         CarrierConnectorRepoPath = CarrierConnectorRepoPath,
         ApiBaseUrl = ApiBaseUrl,
         AuthenticationMode = AuthenticationMode,
-        AuthorizationHeader = AuthorizationHeader
+        AuthorizationHeader = AuthorizationHeader,
+        ElasticUserId = ElasticUserId,
+        ElasticPassword = ElasticPassword,
+        ElasticRegion = ElasticRegion
     };
 
     public void LoadFromSettings(WorkspaceSettings settings)
@@ -56,6 +70,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         ApiBaseUrl = settings.ApiBaseUrl;
         AuthenticationMode = settings.AuthenticationMode;
         AuthorizationHeader = settings.AuthorizationHeader;
+        ElasticUserId = settings.ElasticUserId;
+        ElasticPassword = settings.ElasticPassword;
+        ElasticRegion = settings.ElasticRegion;
     }
 
     [RelayCommand]

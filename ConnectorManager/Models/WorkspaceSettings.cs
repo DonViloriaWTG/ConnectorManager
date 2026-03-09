@@ -18,6 +18,17 @@ public sealed class WorkspaceSettings
     /// </summary>
     public string AuthorizationHeader { get; set; } = string.Empty;
 
+    // ── Elastic GlobalSearch credentials ────────────────────────────
+
+    /// <summary>User ID for Elasticsearch Basic Auth (GlobalSearch).</summary>
+    public string ElasticUserId { get; set; } = string.Empty;
+
+    /// <summary>Password for Elasticsearch Basic Auth (GlobalSearch).</summary>
+    public string ElasticPassword { get; set; } = string.Empty;
+
+    /// <summary>Elastic cluster region (APAC, AMER, EMEA). Defaults to APAC.</summary>
+    public string ElasticRegion { get; set; } = "APAC";
+
     /// <summary>
     /// Attempts to auto-detect CMB repo folders by scanning the given directory
     /// and its immediate subdirectories for CMB.Common, CMB.Framework, CMB.Core,

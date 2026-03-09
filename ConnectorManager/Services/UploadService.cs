@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -189,23 +190,74 @@ public sealed class UploadService : IDisposable
 
     /// <summary>
     /// API: POST /api/package/info
-    /// Controller declares [Consumes("application/xml")] with [FromBody] string packageName.
-    /// ASP.NET Core XML input formatter expects a bare XML-serialized string:
-    ///   &lt;string xmlns="http://schemas.microsoft.com/2003/10/Serialization/"&gt;BlueStar&lt;/string&gt;
+    /// API contract has changed over time:
+    /// - Newer servers expect JSON (either a DTO with PackageName, or a bare JSON string)
+    /// - Older servers expected application/xml with an XML-serialized string payload
+    ///
+    /// We attempt JSON first, then fall back to legacy XML for compatibility.
     /// </summary>
     private async Task CreatePackageAsync(string name, Action<string> onOutput, CancellationToken ct)
     {
         var url = $"{_baseUrl}/api/package/info";
-        var xmlBody = $"<string xmlns=\"http://schemas.microsoft.com/2003/10/Serialization/\">{System.Security.SecurityElement.Escape(name)}</string>";
         onOutput($"  POST {url}");
-        using var requestContent = new StringContent(xmlBody, Encoding.UTF8, "application/xml");
-        var response = await _httpClient.PostAsync(url, requestContent, ct).ConfigureAwait(false);
-        var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+
+        // Server contract (CMB.Core PackageController):
+        //   POST /api/package/info
+        //   [Consumes("application/xml")] and binds [FromBody] string packageName
+        // In practice, the server expects the *raw package name text* in the body.
+        // If we send XML-wrapped values (e.g. <string>...</string>) the regex validator
+        // sees the angle brackets and rejects it.
+        //
+        // We still keep a few fallback shapes for older/newer servers.
+        // 1) application/xml raw text
+        // 2) JSON object: { "PackageName": "MainFreightGlobal" }
+        // 3) JSON string: "MainFreightGlobal"
+        // 4) XML-wrapped string payload
+        var jsonObjectBody = JsonConvert.SerializeObject(new { PackageName = name });
+        var jsonStringBody = JsonConvert.SerializeObject(name);
+
+        var xmlRawTextBody = name;
+        var xmlBody = $"<string xmlns=\"http://schemas.microsoft.com/2003/10/Serialization/\">{System.Security.SecurityElement.Escape(name)}</string>";
+
+        (HttpStatusCode status, string body)? lastFailure = null;
+
+        foreach (var attempt in new (string MediaType, string Body, string Label)[]
+                 {
+                     ("application/xml", xmlRawTextBody, "xml-rawtext"),
+                     ("application/json", jsonObjectBody, "json-object"),
+                     ("application/json", jsonStringBody, "json-string"),
+                     ("application/xml", xmlBody, "xml-string"),
+                 })
         {
+            using var requestContent = new StringContent(attempt.Body, Encoding.UTF8, attempt.MediaType);
+            var response = await _httpClient.PostAsync(url, requestContent, ct).ConfigureAwait(false);
+            var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                onOutput($"  ✔ Package created ({attempt.Label}).");
+                return;
+            }
+
+            lastFailure = (response.StatusCode, body);
+
+            // If the server doesn't like the content-type or binding shape, try the next format.
+            if (response.StatusCode is HttpStatusCode.UnsupportedMediaType or HttpStatusCode.BadRequest)
+            {
+                onOutput($"  ⚠ CreatePackage returned {response.StatusCode} using {attempt.Label}; retrying...");
+                continue;
+            }
+
+            // Other failures are unlikely to be solved by switching body format.
             throw new HttpRequestException($"CreatePackage failed ({response.StatusCode}): {body}");
         }
-        onOutput("  ✔ Package created.");
+
+        if (lastFailure is not null)
+        {
+            throw new HttpRequestException($"CreatePackage failed ({lastFailure.Value.status}): {lastFailure.Value.body}");
+        }
+
+        throw new HttpRequestException("CreatePackage failed: no response.");
     }
 
     /// <summary>

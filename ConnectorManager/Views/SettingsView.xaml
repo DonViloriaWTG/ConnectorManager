@@ -30,6 +30,43 @@
                 </StackPanel>
             </GroupBox>
 
+            <!-- Elastic GlobalSearch -->
+            <GroupBox Header="Elastic GlobalSearch (Sample Data)" Margin="0,0,0,16" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Credentials for direct Elasticsearch API search. Same as CMB.Core GlobalSearch config."
+                               Foreground="#888" FontSize="11" Margin="0,0,0,8"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="User ID:" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ElasticUserId, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="6,4" Margin="0,0,0,6" FontFamily="Cascadia Mono,Consolas"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Password:" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                        <PasswordBox Grid.Row="1" Grid.Column="1" x:Name="ElasticPasswordBox"
+                                     Padding="6,4" Margin="0,0,0,6"
+                                     PasswordChanged="ElasticPasswordBox_PasswordChanged"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Region:" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                        <ComboBox Grid.Row="2" Grid.Column="1"
+                                  SelectedItem="{Binding ElasticRegion}"
+                                  Padding="6,4" Margin="0,0,0,0" HorizontalAlignment="Left" Width="120">
+                            <sys:String xmlns:sys="clr-namespace:System;assembly=mscorlib">APAC</sys:String>
+                            <sys:String xmlns:sys="clr-namespace:System;assembly=mscorlib">AMER</sys:String>
+                            <sys:String xmlns:sys="clr-namespace:System;assembly=mscorlib">EMEA</sys:String>
+                        </ComboBox>
+                    </Grid>
+                </StackPanel>
+            </GroupBox>
+
             <!-- Save -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                 <Button Content="💾 Save Settings" Command="{Binding SaveCommand}"

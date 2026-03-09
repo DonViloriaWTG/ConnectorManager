@@ -103,6 +103,11 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
     /// </summary>
     public event Func<string, string, Task<int?>>? DebugConnectorRequested;
 
+    /// <summary>
+    /// Raised after connectors are scanned, so other tabs (e.g. Sample Data) can access the list.
+    /// </summary>
+    public event Action<IReadOnlyList<ConnectorInfo>>? ConnectorsScanned;
+
     private WorkspaceSettings? _settings;
     private CancellationTokenSource? _cts;
 
@@ -173,7 +178,10 @@ public sealed partial class DeployConnectorViewModel : ObservableObject
             var connectors = await _scanService.ScanAsync(CarrierConnectorRepoPath).ConfigureAwait(true);
             ConnectorCount = connectors.Count;
             AppendOutput($"✔ Found {connectors.Count} connectors.");
-            StatusText = $"{connectors.Count} connectors found";            RebuildRegionList();            UpdateSearchResults();
+            StatusText = $"{connectors.Count} connectors found";
+            RebuildRegionList();
+            UpdateSearchResults();
+            ConnectorsScanned?.Invoke(connectors);
         }
         catch (Exception ex)
         {
